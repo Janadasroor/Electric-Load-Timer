@@ -34,25 +34,33 @@ class MainViewModel @Inject constructor(
     fun getStatus() {
         viewModelScope.launch {
             addLog("Requesting status...")
-            val result = repository.getStatus()
-            if (result.isSuccessful) {
-                _status.value = result.body()
-                addLog("Status updated: ${result.body()}")
-            } else {
-                addLog("Status request failed: ${result.code()}")
+            try {
+                val result = repository.getStatus()
+                if (result.isSuccessful) {
+                    _status.value = result.body()
+                    addLog("Status updated: ${result.body()}")
+                } else {
+                    addLog("Status request failed: ${result.code()}")
+                }
+            } catch (e: Exception) {
+                addLog("Status request failed: ${e.message}")
             }
         }
     }
 
     fun getSchedule() {
         viewModelScope.launch {
-            addLog("Requesting schedule...")
-            val result = repository.getSchedule()
-            if (result.isSuccessful) {
-                _schedule.value = result.body()
-                addLog("Schedule updated: ${result.body()}")
-            } else {
-                addLog("Schedule request failed: ${result.code()}")
+            try {
+                addLog("Requesting schedule...")
+                val result = repository.getSchedule()
+                if (result.isSuccessful) {
+                    _schedule.value = result.body()
+                    addLog("Schedule updated: ${result.body()}")
+                } else {
+                    addLog("Schedule request failed: ${result.code()}")
+                }
+            } catch (e: Exception) {
+                addLog("Schedule request failed: ${e.message}")
             }
         }
     }
@@ -66,39 +74,51 @@ class MainViewModel @Inject constructor(
         endPeriod: String
     ) {
         viewModelScope.launch {
-            addLog("Sending schedule...")
-            val result = repository.setSchedule(startHour, endHour, startMin, endMin, startPeriod, endPeriod)
-            if (result.isSuccessful) {
-                addLog("Schedule set successfully")
-                getSchedule()
-            } else {
-                addLog("Failed to set schedule: ${result.code()}")
+            try {
+                addLog("Sending schedule...")
+                val result = repository.setSchedule(startHour, endHour, startMin, endMin, startPeriod, endPeriod)
+                if (result.isSuccessful) {
+                    addLog("Schedule set successfully")
+                    getSchedule()
+                } else {
+                    addLog("Failed to set schedule: ${result.code()}")
+                }
+            } catch (e: Exception) {
+                addLog("Failed to set schedule: ${e.message}")
             }
         }
     }
 
     fun clearSchedule() {
         viewModelScope.launch {
-            addLog("Clearing schedule...")
-            val result = repository.clearSchedule()
-            if (result.isSuccessful) {
-                addLog("Schedule cleared")
-                getSchedule()
-            } else {
-                addLog("Failed to clear schedule: ${result.code()}")
+            try {
+                addLog("Clearing schedule...")
+                val result = repository.clearSchedule()
+                if (result.isSuccessful) {
+                    addLog("Schedule cleared")
+                    getSchedule()
+                } else {
+                    addLog("Failed to clear schedule: ${result.code()}")
+                }
+            } catch (e: Exception) {
+                addLog("Failed to clear schedule: ${e.message}")
             }
         }
     }
 
     fun syncTime(hour: Int, min: Int, sec: Int) {
         viewModelScope.launch {
-            addLog("Syncing time...")
-            val result = repository.syncTime(hour, min, sec)
-            if (result.isSuccessful) {
-                addLog("Time synced")
-                getStatus()
-            } else {
-                addLog("Failed to sync time: ${result.code()}")
+            try{
+                addLog("Syncing time...")
+                val result = repository.syncTime(hour, min, sec)
+                if (result.isSuccessful) {
+                    addLog("Time synced")
+                    getStatus()
+                } else {
+                    addLog("Failed to sync time: ${result.code()}")
+                }
+            }catch (e: Exception){
+                addLog("Failed to sync time: ${e.message}")
             }
         }
     }

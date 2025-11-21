@@ -1,0 +1,75 @@
+<resources>
+    <!-- App Name -->
+    <string name="app_name">مؤقت الحمل ESP</string>
+    
+    <!-- Main Screen -->
+    <string name="esp_controller">متحكم ESP8266</string>
+    <string name="refresh">تحديث</string>
+    
+    <!-- Status Card -->
+    <string name="device_status">حالة الجهاز</string>
+    <string name="led_state">حالة LED</string>
+    <string name="schedule">الجدول</string>
+    <string name="time_init">تهيئة الوقت</string>
+    <string name="on">تشغيل</string>
+    <string name="off">إيقاف</string>
+    <string name="active">نشط</string>
+    <string name="inactive">غير نشط</string>
+    <string name="yes">نعم</string>
+    <string name="no">لا</string>
+    <string name="loading">جاري التحميل...</string>
+    <string name="current_time">الوقت الحالي: %1$02d:%2$02d</string>
+    
+    <!-- Schedule Card -->
+    <string name="clear">مسح</string>
+    <string name="start">البداية</string>
+    <string name="end">النهاية</string>
+    <string name="no_schedule_set">لم يتم تعيين جدول</string>
+    <string name="set_schedule">تعيين الجدول</string>
+    <string name="update_schedule">تحديث الجدول</string>
+    
+    <!-- Control Buttons -->
+    <string name="sync_time">مزامنة الوقت</string>
+    
+    <!-- Activity Log -->
+    <string name="activity_log">سجل النشاط</string>
+    <string name="entries">%d إدخالات</string>
+    <string name="no_logs_yet">لا توجد سجلات بعد...</string>
+    
+    <!-- Schedule Dialog -->
+    <string name="start_time">وقت البداية</string>
+    <string name="end_time">وقت النهاية</string>
+    <string name="set">تعيين</string>
+    <string name="cancel">إلغاء</string>
+    
+    <!-- Sync Time Dialog -->
+    <string name="current_device_time">وقت الجهاز الحالي: %1$02d:%2$02d:%3$02d</string>
+    <string name="use_current_time">استخدام الوقت الحالي</string>
+    <string name="sync">مزامنة</string>
+    
+    <!-- Time Period -->
+    <string name="am">ص</string>
+    <string name="pm">م</string>
+    
+    <!-- Permissions -->
+    <string name="permissions_required">⚠️ الأذونات مطلوبة</string>
+    <string name="permissions_message">يحتاج هذا التطبيق إلى أذونات WiFi والموقع للاتصال بجهاز ESP8266 الخاص بك.</string>
+    <string name="grant_permissions">منح الأذونات</string>
+    
+    <!-- Settings -->
+    <string name="settings">الإعدادات</string>
+    <string name="language">اللغة</string>
+    <string name="select_language">اختر اللغة</string>
+    <string name="english">الإنجليزية</string>
+    <string name="arabic">العربية</string>
+    <string name="about">حول</string>
+    <string name="app_version">إصدار التطبيق</string>
+    <string name="version_name">1.0</string>
+    <string name="app_description">تحكم في جهاز ESP8266 الخاص بك لجدولة الأحمال الكهربائية بتوقيت دقيق.</string>
+    <string name="developer">المطور</string>
+    <string name="developer_name">اسمك</string>
+    
+    <!-- Navigation -->
+    <string name="home">الرئيسية</string>
+    <string name="back">رجوع</string>
+</resources>

@@ -68,6 +68,10 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.52")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    
+    // Navigation Compose
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    
     //implementation("com.google.code.gson:gson:2.11.0")
 
     implementation ("androidx.room:room-runtime:2.6.1")

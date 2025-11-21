@@ -18,10 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.loadtimeresp.R
 import com.example.loadtimeresp.presentation.viewmodels.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -37,7 +39,10 @@ private val TextSecondary = Color(0xFFB0B0B0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ESP8266ControlScreen(viewModel: MainViewModel) {
+fun ESP8266ControlScreen(
+    viewModel: MainViewModel,
+    onNavigateToSettings: () -> Unit = {}
+) {
     val status by viewModel.status.collectAsState()
     val schedule by viewModel.schedule.collectAsState()
 
@@ -45,7 +50,11 @@ fun ESP8266ControlScreen(viewModel: MainViewModel) {
     var showSyncDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        //viewModel.syncTime()
+        val hour= Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val min= Calendar.getInstance().get(Calendar.MINUTE)
+        val sec= Calendar.getInstance().get(Calendar.SECOND)
+
+        viewModel.syncTime(hour, min, sec)
         viewModel.getStatus()
         viewModel.getSchedule()
     }
@@ -60,14 +69,14 @@ fun ESP8266ControlScreen(viewModel: MainViewModel) {
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Settings,
+                        imageVector = Icons.Default.Power,
                         contentDescription = null,
                         tint = OrangeAccent,
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "ESP8266 Controller",
+                        text = stringResource(R.string.esp_controller),
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
@@ -77,13 +86,20 @@ fun ESP8266ControlScreen(viewModel: MainViewModel) {
                 containerColor = SurfaceDark
             ),
             actions = {
+                IconButton(onClick = onNavigateToSettings) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = stringResource(R.string.settings),
+                        tint = OrangeAccent
+                    )
+                }
                 IconButton(onClick = {
                     viewModel.getStatus()
                     viewModel.getSchedule()
                 }) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = "Refresh",
+                        contentDescription = stringResource(R.string.refresh),
                         tint = OrangeAccent
                     )
                 }
@@ -164,7 +180,7 @@ fun StatusCard(status: com.example.loadtimeresp.data.api.StatusResponse?) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Device Status",
+                    text = stringResource(R.string.device_status),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -174,9 +190,21 @@ fun StatusCard(status: com.example.loadtimeresp.data.api.StatusResponse?) {
             Spacer(modifier = Modifier.height(16.dp))
 
             if (status != null) {
-                StatusRow("LED State", if (status.ledState) "ON" else "OFF", status.ledState)
-                StatusRow("Schedule", if (status.scheduleValid) "Active" else "Inactive", status.scheduleValid)
-                StatusRow("Time Init", if (status.timeInitialized) "Yes" else "No", status.timeInitialized)
+                StatusRow(
+                    stringResource(R.string.led_state),
+                    if (status.ledState) stringResource(R.string.on) else stringResource(R.string.off),
+                    status.ledState
+                )
+                StatusRow(
+                    stringResource(R.string.schedule),
+                    if (status.scheduleValid) stringResource(R.string.active) else stringResource(R.string.inactive),
+                    status.scheduleValid
+                )
+                StatusRow(
+                    stringResource(R.string.time_init),
+                    if (status.timeInitialized) stringResource(R.string.yes) else stringResource(R.string.no),
+                    status.timeInitialized
+                )
 
                 Divider(
                     modifier = Modifier.padding(vertical = 12.dp),
@@ -195,7 +223,7 @@ fun StatusCard(status: com.example.loadtimeresp.data.api.StatusResponse?) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Current Time: %02d:%02d".format(status.currentHour, status.currentMinute),
+                        text = stringResource(R.string.current_time, status.currentHour, status.currentMinute),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = OrangeAccent
@@ -203,7 +231,7 @@ fun StatusCard(status: com.example.loadtimeresp.data.api.StatusResponse?) {
                 }
             } else {
                 Text(
-                    text = "Loading...",
+                    text = stringResource(R.string.loading),
                     color = TextSecondary,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
@@ -266,7 +294,7 @@ fun ScheduleCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Schedule",
+                        text = stringResource(R.string.schedule),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -275,7 +303,7 @@ fun ScheduleCard(
 
                 if (schedule?.valid == true) {
                     TextButton(onClick = onClearSchedule) {
-                        Text("Clear", color = Color(0xFFFF5252))
+                        Text(stringResource(R.string.clear), color = Color(0xFFFF5252))
                     }
                 }
             }
@@ -287,12 +315,18 @@ fun ScheduleCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    TimeDisplay("Start", "${schedule.startHour}:${"%02d".format(schedule.startMinute)} ${schedule.startPeriod}")
-                    TimeDisplay("End", "${schedule.endHour}:${"%02d".format(schedule.endMinute)} ${schedule.endPeriod}")
+                    TimeDisplay(
+                        stringResource(R.string.start),
+                        "${schedule.startHour}:${"%02d".format(schedule.startMinute)} ${schedule.startPeriod}"
+                    )
+                    TimeDisplay(
+                        stringResource(R.string.end),
+                        "${schedule.endHour}:${"%02d".format(schedule.endMinute)} ${schedule.endPeriod}"
+                    )
                 }
             } else {
                 Text(
-                    text = "No schedule set",
+                    text = stringResource(R.string.no_schedule_set),
                     color = TextSecondary,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
@@ -308,7 +342,12 @@ fun ScheduleCard(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(if (schedule?.valid == true) "Update Schedule" else "Set Schedule")
+                Text(
+                    if (schedule?.valid == true)
+                        stringResource(R.string.update_schedule)
+                    else
+                        stringResource(R.string.set_schedule)
+                )
             }
         }
     }
@@ -345,7 +384,7 @@ fun ControlButtons(onSyncTime: () -> Unit, onRefresh: () -> Unit) {
         ) {
             Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("Sync Time")
+            Text(stringResource(R.string.sync_time))
         }
 
         OutlinedButton(
@@ -359,7 +398,7 @@ fun ControlButtons(onSyncTime: () -> Unit, onRefresh: () -> Unit) {
         ) {
             Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("Refresh")
+            Text(stringResource(R.string.refresh))
         }
     }
 }
@@ -400,7 +439,7 @@ fun ImprovedLogWindow(viewModel: MainViewModel) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Activity Log",
+                        text = stringResource(R.string.activity_log),
                         color = TextPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
@@ -412,7 +451,7 @@ fun ImprovedLogWindow(viewModel: MainViewModel) {
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "${logs.size} entries",
+                        text = stringResource(R.string.entries, logs.size),
                         color = OrangeAccent,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -429,7 +468,7 @@ fun ImprovedLogWindow(viewModel: MainViewModel) {
             ) {
                 if (logs.isEmpty()) {
                     Text(
-                        text = "No logs yet...",
+                        text = stringResource(R.string.no_logs_yet),
                         color = TextSecondary,
                         fontSize = 14.sp,
                         modifier = Modifier
@@ -490,11 +529,11 @@ fun ScheduleDialog(
         onDismissRequest = onDismiss,
         containerColor = SurfaceDark,
         title = {
-            Text("Set Schedule", color = TextPrimary, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.set_schedule), color = TextPrimary, fontWeight = FontWeight.Bold)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Start Time", color = OrangeAccent, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.start_time), color = OrangeAccent, fontWeight = FontWeight.Bold)
                 TimePickerRow(startHour, startMin, startPeriod,
                     onHourChange = { startHour = it },
                     onMinChange = { startMin = it },
@@ -503,7 +542,7 @@ fun ScheduleDialog(
 
                 Divider(color = TextSecondary.copy(alpha = 0.3f))
 
-                Text("End Time", color = OrangeAccent, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.end_time), color = OrangeAccent, fontWeight = FontWeight.Bold)
                 TimePickerRow(endHour, endMin, endPeriod,
                     onHourChange = { endHour = it },
                     onMinChange = { endMin = it },
@@ -522,12 +561,12 @@ fun ScheduleDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = OrangeAccent)
             ) {
-                Text("Set")
+                Text(stringResource(R.string.set))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = TextSecondary)
+                Text(stringResource(R.string.cancel), color = TextSecondary)
             }
         }
     )
@@ -548,12 +587,12 @@ fun SyncTimeDialog(
         onDismissRequest = onDismiss,
         containerColor = SurfaceDark,
         title = {
-            Text("Sync Time", color = TextPrimary, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.sync_time), color = TextPrimary, fontWeight = FontWeight.Bold)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Current device time: %02d:%02d:%02d".format(hour, min, sec),
+                    stringResource(R.string.current_device_time, hour, min, sec),
                     color = OrangeAccent,
                     fontWeight = FontWeight.Bold
                 )
@@ -566,7 +605,7 @@ fun SyncTimeDialog(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = OrangeAccent)
                 ) {
-                    Text("Use Current Time")
+                    Text(stringResource(R.string.use_current_time))
                 }
             }
         },
@@ -575,12 +614,12 @@ fun SyncTimeDialog(
                 onClick = { onConfirm(hour, min, sec) },
                 colors = ButtonDefaults.buttonColors(containerColor = OrangeAccent)
             ) {
-                Text("Sync")
+                Text(stringResource(R.string.sync))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = TextSecondary)
+                Text(stringResource(R.string.cancel), color = TextSecondary)
             }
         }
     )
@@ -611,7 +650,7 @@ fun TimePickerRow(
                     contentColor = if (period == "AM") OrangeAccent else TextSecondary
                 )
             ) {
-                Text("AM", fontWeight = if (period == "AM") FontWeight.Bold else FontWeight.Normal)
+                Text(stringResource(R.string.am), fontWeight = if (period == "AM") FontWeight.Bold else FontWeight.Normal)
             }
             TextButton(
                 onClick = { onPeriodChange("PM") },
@@ -619,7 +658,7 @@ fun TimePickerRow(
                     contentColor = if (period == "PM") OrangeAccent else TextSecondary
                 )
             ) {
-                Text("PM", fontWeight = if (period == "PM") FontWeight.Bold else FontWeight.Normal)
+                Text(stringResource(R.string.pm), fontWeight = if (period == "PM") FontWeight.Bold else FontWeight.Normal)
             }
         }
     }

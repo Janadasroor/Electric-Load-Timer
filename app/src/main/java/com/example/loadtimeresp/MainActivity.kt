@@ -1,6 +1,7 @@
 package com.example.loadtimeresp
 
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,17 +19,23 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.loadtimeresp.presentation.screens.ESP8266ControlScreen
+import androidx.navigation.compose.rememberNavController
+import com.example.loadtimeresp.R
+import com.example.loadtimeresp.presentation.navigation.NavigationGraph
 import com.example.loadtimeresp.presentation.viewmodels.MainViewModel
+import com.example.loadtimeresp.presentation.viewmodels.SettingsViewModel
 import com.example.loadtimeresp.ui.theme.LoadTimerESPTheme
+import com.example.loadtimeresp.utils.LocaleManager
 import com.example.loadtimeresp.utils.setupPermissions
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -41,11 +48,32 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
+            val selectedLanguage by settingsViewModel.selectedLanguage.collectAsState()
+            
+            // Apply locale when language changes
+            LaunchedEffect(selectedLanguage) {
+                LocaleManager.applyLocale(this@MainActivity, selectedLanguage)
+            }
+            
             LoadTimerESPTheme {
-                MainScreen()
+                MainScreen(
+                    onLanguageChanged = {
+                        // Use Handler to ensure recreate() is called on main thread
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            recreate()
+                        }
+                    }
+                )
             }
         }
         checkAndRequestPermissions()
+    }
+    
+    override fun attachBaseContext(newBase: Context) {
+        // This will be called before onCreate, but we need to get the saved language
+        // For now, we'll use the default locale handling
+        super.attachBaseContext(newBase)
     }
 
     private fun checkAndRequestPermissions() {
@@ -62,8 +90,11 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun MainScreen() {
-        val viewModel: MainViewModel = hiltViewModel()
+    private fun MainScreen(onLanguageChanged: () -> Unit) {
+        val mainViewModel: MainViewModel = hiltViewModel()
+        val settingsViewModel: SettingsViewModel = hiltViewModel()
+        val navController = rememberNavController()
+        
         var permissionsGranted by remember {
             mutableStateOf(permissionHandler.hasRequiredPermissions())
         }
@@ -79,7 +110,12 @@ class MainActivity : ComponentActivity() {
             color = MaterialTheme.colorScheme.background
         ) {
             if (permissionsGranted) {
-                ESP8266ControlScreen(viewModel = viewModel)
+                NavigationGraph(
+                    navController = navController,
+                    mainViewModel = mainViewModel,
+                    settingsViewModel = settingsViewModel,
+                    onLanguageChanged = onLanguageChanged
+                )
             } else {
                 PermissionDeniedScreen(
                     onRequestAgain = {
@@ -102,18 +138,18 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "⚠️ Permissions Required",
+                text = stringResource(R.string.permissions_required),
                 style = MaterialTheme.typography.headlineMedium
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "This app needs WiFi and location permissions to connect to your ESP8266 device.",
+                text = stringResource(R.string.permissions_message),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(onClick = onRequestAgain) {
-                Text("Grant Permissions")
+                Text(stringResource(R.string.grant_permissions))
             }
         }
     }

@@ -1,3 +1,75 @@
 <resources>
+    <!-- App Name -->
     <string name="app_name">Load Timer ESP</string>
+    
+    <!-- Main Screen -->
+    <string name="esp_controller">ESP8266 Controller</string>
+    <string name="refresh">Refresh</string>
+    
+    <!-- Status Card -->
+    <string name="device_status">Device Status</string>
+    <string name="led_state">LED State</string>
+    <string name="schedule">Schedule</string>
+    <string name="time_init">Time Init</string>
+    <string name="on">ON</string>
+    <string name="off">OFF</string>
+    <string name="active">Active</string>
+    <string name="inactive">Inactive</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="loading">Loading...</string>
+    <string name="current_time">Current Time: %1$02d:%2$02d</string>
+    
+    <!-- Schedule Card -->
+    <string name="clear">Clear</string>
+    <string name="start">Start</string>
+    <string name="end">End</string>
+    <string name="no_schedule_set">No schedule set</string>
+    <string name="set_schedule">Set Schedule</string>
+    <string name="update_schedule">Update Schedule</string>
+    
+    <!-- Control Buttons -->
+    <string name="sync_time">Sync Time</string>
+    
+    <!-- Activity Log -->
+    <string name="activity_log">Activity Log</string>
+    <string name="entries">%d entries</string>
+    <string name="no_logs_yet">No logs yet...</string>
+    
+    <!-- Schedule Dialog -->
+    <string name="start_time">Start Time</string>
+    <string name="end_time">End Time</string>
+    <string name="set">Set</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Sync Time Dialog -->
+    <string name="current_device_time">Current device time: %1$02d:%2$02d:%3$02d</string>
+    <string name="use_current_time">Use Current Time</string>
+    <string name="sync">Sync</string>
+    
+    <!-- Time Period -->
+    <string name="am">AM</string>
+    <string name="pm">PM</string>
+    
+    <!-- Permissions -->
+    <string name="permissions_required">⚠️ Permissions Required</string>
+    <string name="permissions_message">This app needs WiFi and location permissions to connect to your ESP8266 device.</string>
+    <string name="grant_permissions">Grant Permissions</string>
+    
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="language">Language</string>
+    <string name="select_language">Select Language</string>
+    <string name="english">English</string>
+    <string name="arabic">Arabic</string>
+    <string name="about">About</string>
+    <string name="app_version">App Version</string>
+    <string name="version_name">1.0</string>
+    <string name="app_description">Control your ESP8266 device to schedule electrical loads with precise timing.</string>
+    <string name="developer">Developer</string>
+    <string name="developer_name">Your Name</string>
+    
+    <!-- Navigation -->
+    <string name="home">Home</string>
+    <string name="back">Back</string>
 </resources>
