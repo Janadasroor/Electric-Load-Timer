@@ -155,8 +155,8 @@ Relay NO ──→ AC Power (Live)
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/JanadaSroor/LoadTimerESP.git
-   cd LoadTimerESP
+   git clone https://github.com/Janadasroor/Electric-Load-Timer.git
+   cd Electric-Load-Timer
    ```
 
 2. **Open in Android Studio**:
@@ -380,8 +380,8 @@ LoadTimerESP/
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/LoadTimerESP.git
-cd LoadTimerESP
+git clone https://github.com/Janadasroor/Electric-Load-Timer.git
+cd Electric-Load-Timer
 
 # Build Android app
 ./gradlew assembleDebug
