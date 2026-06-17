@@ -50,9 +50,10 @@ fun ESP8266ControlScreen(
     var showSyncDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        val hour= Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val min= Calendar.getInstance().get(Calendar.MINUTE)
-        val sec= Calendar.getInstance().get(Calendar.SECOND)
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val min = calendar.get(Calendar.MINUTE)
+        val sec = calendar.get(Calendar.SECOND)
 
         viewModel.syncTime(hour, min, sec)
         viewModel.getStatus()
@@ -116,6 +117,12 @@ fun ESP8266ControlScreen(
             // Status Card
             StatusCard(status)
 
+            // Brightness Control Card
+            BrightnessCard(
+                brightness = status?.brightness ?: 1023,
+                onBrightnessChange = { viewModel.setBrightness(it) }
+            )
+
             // Schedule Card
             ScheduleCard(
                 schedule = schedule,
@@ -160,6 +167,60 @@ fun ESP8266ControlScreen(
                 showSyncDialog = false
             }
         )
+    }
+}
+
+@Composable
+fun BrightnessCard(
+    brightness: Int,
+    onBrightnessChange: (Int) -> Unit
+) {
+    var sliderValue by remember(brightness) { mutableFloatStateOf(brightness.toFloat()) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Lightbulb,
+                    contentDescription = null,
+                    tint = OrangeAccent,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.brightness),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "${(sliderValue / 10.23f).toInt()}%",
+                    color = OrangeAccent,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Slider(
+                value = sliderValue,
+                onValueChange = { sliderValue = it },
+                onValueChangeFinished = {
+                    onBrightnessChange(sliderValue.toInt())
+                },
+                valueRange = 0f..1023f,
+                colors = SliderDefaults.colors(
+                    thumbColor = OrangeAccent,
+                    activeTrackColor = OrangeAccent,
+                    inactiveTrackColor = OrangeAccent.copy(alpha = 0.24f)
+                )
+            )
+        }
     }
 }
 

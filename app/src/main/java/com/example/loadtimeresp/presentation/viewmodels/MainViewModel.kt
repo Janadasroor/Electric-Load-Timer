@@ -89,6 +89,23 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun setBrightness(brightness: Int) {
+        viewModelScope.launch {
+            try {
+                addLog("Setting brightness to $brightness...")
+                val result = repository.setBrightness(brightness)
+                if (result.isSuccessful) {
+                    addLog("Brightness set successfully")
+                    getStatus()
+                } else {
+                    addLog("Failed to set brightness: ${result.code()}")
+                }
+            } catch (e: Exception) {
+                addLog("Failed to set brightness: ${e.message}")
+            }
+        }
+    }
+
     fun clearSchedule() {
         viewModelScope.launch {
             try {
@@ -97,6 +114,7 @@ class MainViewModel @Inject constructor(
                 if (result.isSuccessful) {
                     addLog("Schedule cleared")
                     getSchedule()
+                    getStatus()
                 } else {
                     addLog("Failed to clear schedule: ${result.code()}")
                 }

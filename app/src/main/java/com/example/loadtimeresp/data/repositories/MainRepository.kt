@@ -27,11 +27,16 @@ class MainRepository @Inject constructor(
             endPeriod
         )
     }
+
     suspend fun syncTime(hour: Int,
                          minute: Int,
                          second:Int
     ): Response<Unit>{
         return  api.syncTime(hour ,minute,second)
+    }
+
+    suspend fun setBrightness(brightness: Int): Response<Unit> {
+        return api.setBrightness(brightness)
     }
 
     suspend fun getSchedule(): Response<ScheduleResponse> {
@@ -41,6 +46,7 @@ class MainRepository @Inject constructor(
     suspend fun getStatus(): Response<StatusResponse> {
         return api.getStatus()
     }
+
     suspend fun clearSchedule(): Response<Unit> {
         return api.clearSchedule()
     }

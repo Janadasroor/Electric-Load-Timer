@@ -11,6 +11,7 @@
     <string name="led_state">LED State</string>
     <string name="schedule">Schedule</string>
     <string name="time_init">Time Init</string>
+    <string name="brightness">Brightness</string>
     <string name="on">ON</string>
     <string name="off">OFF</string>
     <string name="active">Active</string>

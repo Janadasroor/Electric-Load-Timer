@@ -11,6 +11,7 @@
     <string name="led_state">حالة LED</string>
     <string name="schedule">الجدول</string>
     <string name="time_init">تهيئة الوقت</string>
+    <string name="brightness">السطوع</string>
     <string name="on">تشغيل</string>
     <string name="off">إيقاف</string>
     <string name="active">نشط</string>
