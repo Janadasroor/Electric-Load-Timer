@@ -1,6 +1,7 @@
 package com.example.loadtimeresp.presentation.screens
 
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -49,6 +50,7 @@ fun ESP8266ControlScreen(
     var showScheduleDialog by remember { mutableStateOf(false) }
     var showSyncDialog by remember { mutableStateOf(false) }
 
+    // Auto sync time and fetch updates when the app loads
     LaunchedEffect(Unit) {
         val calendar = Calendar.getInstance()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -440,7 +442,7 @@ fun ControlButtons(onSyncTime: () -> Unit, onRefresh: () -> Unit) {
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = OrangeAccent
             ),
-            border = androidx.compose.foundation.BorderStroke(1.dp, OrangeAccent),
+            border = BorderStroke(1.dp, OrangeAccent),
             shape = RoundedCornerShape(8.dp)
         ) {
             Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -454,7 +456,7 @@ fun ControlButtons(onSyncTime: () -> Unit, onRefresh: () -> Unit) {
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = OrangeAccent
             ),
-            border = androidx.compose.foundation.BorderStroke(1.dp, OrangeAccent),
+            border = BorderStroke(1.dp, OrangeAccent),
             shape = RoundedCornerShape(8.dp)
         ) {
             Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -593,7 +595,10 @@ fun ScheduleDialog(
             Text(stringResource(R.string.set_schedule), color = TextPrimary, fontWeight = FontWeight.Bold)
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 Text(stringResource(R.string.start_time), color = OrangeAccent, fontWeight = FontWeight.Bold)
                 TimePickerRow(startHour, startMin, startPeriod,
                     onHourChange = { startHour = it },
@@ -686,6 +691,7 @@ fun SyncTimeDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimePickerRow(
     hour: Int,
@@ -695,56 +701,88 @@ fun TimePickerRow(
     onMinChange: (Int) -> Unit,
     onPeriodChange: (String) -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        NumberPicker(hour, 1..12, onHourChange)
-        Text(":", color = TextPrimary, fontSize = 24.sp)
-        NumberPicker(min, 0..59, onMinChange)
-
+        // Hour Slider
         Column {
-            TextButton(
-                onClick = { onPeriodChange("AM") },
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = if (period == "AM") OrangeAccent else TextSecondary
-                )
-            ) {
-                Text(stringResource(R.string.am), fontWeight = if (period == "AM") FontWeight.Bold else FontWeight.Normal)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(text = "Hour", color = TextSecondary, fontSize = 12.sp)
+                Text(text = "$hour", color = OrangeAccent, fontWeight = FontWeight.Bold)
             }
-            TextButton(
-                onClick = { onPeriodChange("PM") },
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = if (period == "PM") OrangeAccent else TextSecondary
+            Slider(
+                value = hour.toFloat(),
+                onValueChange = { onHourChange(it.toInt()) },
+                valueRange = 1f..12f,
+                steps = 10,
+                colors = SliderDefaults.colors(
+                    thumbColor = OrangeAccent,
+                    activeTrackColor = OrangeAccent,
+                    inactiveTrackColor = OrangeAccent.copy(alpha = 0.24f)
                 )
-            ) {
-                Text(stringResource(R.string.pm), fontWeight = if (period == "PM") FontWeight.Bold else FontWeight.Normal)
-            }
+            )
         }
-    }
-}
 
-@Composable
-fun NumberPicker(value: Int, range: IntRange, onValueChange: (Int) -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        IconButton(onClick = {
-            val newVal = if (value + 1 > range.last) range.first else value + 1
-            onValueChange(newVal)
-        }) {
-            Icon(Icons.Default.KeyboardArrowUp, contentDescription = null, tint = OrangeAccent)
+        // Minute Slider
+        Column {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(text = "Minute", color = TextSecondary, fontSize = 12.sp)
+                Text(text = "%02d".format(min), color = OrangeAccent, fontWeight = FontWeight.Bold)
+            }
+            Slider(
+                value = min.toFloat(),
+                onValueChange = { onMinChange(it.toInt()) },
+                valueRange = 0f..59f,
+                colors = SliderDefaults.colors(
+                    thumbColor = OrangeAccent,
+                    activeTrackColor = OrangeAccent,
+                    inactiveTrackColor = OrangeAccent.copy(alpha = 0.24f)
+                )
+            )
         }
-        Text(
-            text = "%02d".format(value),
-            color = TextPrimary,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
-        IconButton(onClick = {
-            val newVal = if (value - 1 < range.first) range.last else value - 1
-            onValueChange(newVal)
-        }) {
-            Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = OrangeAccent)
+
+        // AM/PM Selection Chips
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            FilterChip(
+                selected = period == "AM",
+                onClick = { onPeriodChange("AM") },
+                label = { Text("AM") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = OrangeAccent.copy(alpha = 0.1f),
+                    selectedLabelColor = OrangeAccent,
+                    labelColor = TextSecondary
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = period == "AM",
+                    borderColor = TextSecondary.copy(alpha = 0.3f),
+                    selectedBorderColor = OrangeAccent,
+                    borderWidth = 1.dp,
+                    selectedBorderWidth = 1.dp
+                )
+            )
+            FilterChip(
+                selected = period == "PM",
+                onClick = { onPeriodChange("PM") },
+                label = { Text("PM") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = OrangeAccent.copy(alpha = 0.1f),
+                    selectedLabelColor = OrangeAccent,
+                    labelColor = TextSecondary
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = period == "PM",
+                    borderColor = TextSecondary.copy(alpha = 0.3f),
+                    selectedBorderColor = OrangeAccent,
+                    borderWidth = 1.dp,
+                    selectedBorderWidth = 1.dp
+                )
+            )
         }
     }
 }

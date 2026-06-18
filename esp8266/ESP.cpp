@@ -1,16 +1,6 @@
 /*
  * ═══════════════════════════════════════════════════════════════════════════
- * ESP8266 Load Timer - Smart IoT Scheduler
- * ═══════════════════════════════════════════════════════════════════════════
- * 
- * Features:
- *   - WiFi Access Point (192.168.4.1)
- *   - REST API for Android Integration
- *   - PWM Brightness Control for Power BJTs
- *   - EEPROM Persistence
- * 
- * Hardware:
- *   - GPIO2 (D4) -> 1k-4.7k Resistor -> Base of NPN BJT
+ * ESP8266 Load Timer - Smart IoT Scheduler (Inverted Logic + 30s Fade Off)
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -39,7 +29,13 @@ struct Schedule {
 };
 
 Schedule schedule;
-bool ledState = false;
+
+// Fading & State Variables
+bool ledState = false;          // True if schedule says it should be ON
+bool isFadingOut = false;       // True when currently in the 30-second fade out
+unsigned long fadeStartTime = 0;
+const unsigned long FADE_DURATION = 30000; // 30 seconds in milliseconds
+int currentOutputBrightness = 0;           // Current live brightness level (0-1023)
 
 // Time Tracking
 unsigned long lastMillis = 0;
@@ -51,11 +47,31 @@ bool timeInitialized = false;
 const int EEPROM_ADDR = 0;
 const int EEPROM_SIZE = sizeof(Schedule);
 
+// Forward declarations
+int convertTo24Hour(int hour, String period);
+void loadSchedule();
+void saveSchedule();
+void updateCurrentTime();
+void checkSchedule();
+void handleFade();
+void writeInvertedPWM(int brightnessVal);
+void handleRoot();
+void handleSetSchedule();
+void handleGetSchedule();
+void handleGetScheduleJson();
+void handleClearSchedule();
+void handleStatus();
+void handleSyncTime();
+void handleSetBrightness();
+
 void setup() {
     Serial.begin(115200);
-    
+
+    analogWriteRange(1023);
+    analogWriteFreq(500); // 500Hz for clean BJT switching
+
     pinMode(LED_PIN, OUTPUT);
-    analogWrite(LED_PIN, 0);
+    writeInvertedPWM(0); // Start fully OFF (Pin HIGH)
 
     EEPROM.begin(EEPROM_SIZE);
     loadSchedule();
@@ -84,7 +100,92 @@ void loop() {
     server.handleClient();
     updateCurrentTime();
     checkSchedule();
+    handleFade(); // Keeps tracking and updating the fade calculation smoothly
     delay(20);
+}
+
+// Helper to handle the inverted BJT hardware write in one clean place
+void writeInvertedPWM(int brightnessVal) {
+    currentOutputBrightness = brightnessVal;
+    analogWrite(LED_PIN, 1023 - brightnessVal);
+}
+
+void handleFade() {
+    if (!isFadingOut) return;
+
+    unsigned long elapsed = millis() - fadeStartTime;
+
+    if (elapsed >= FADE_DURATION) {
+        // Fade is complete
+        isFadingOut = false;
+        writeInvertedPWM(0); // Fully OFF
+        Serial.println("Fade out finished. Load is OFF.");
+    } else {
+        // Calculate the linear drop in brightness over time
+        float progress = (float)elapsed / (float)FADE_DURATION;
+        int newBrightness = schedule.brightness - (progress * schedule.brightness);
+
+        if (newBrightness < 0) newBrightness = 0;
+        writeInvertedPWM(newBrightness);
+    }
+}
+
+void checkSchedule() {
+    if (!schedule.isValid || !timeInitialized) return;
+
+    int curMin = currentHour * 60 + currentMinute;
+    int startMin = schedule.startHour * 60 + schedule.startMinute;
+    int endMin = schedule.endHour * 60 + schedule.endMinute;
+
+    bool shouldBeOn = false;
+    if (startMin > endMin) { // Midnight crossing
+        shouldBeOn = (curMin >= startMin || curMin < endMin);
+    } else {
+        shouldBeOn = (curMin >= startMin && curMin < endMin);
+    }
+
+    if (shouldBeOn != ledState) {
+        ledState = shouldBeOn;
+
+        if (ledState) {
+            // Turning ON: Stop any active fade out and snap straight to target brightness
+            isFadingOut = false;
+            writeInvertedPWM(schedule.brightness);
+            Serial.printf("Schedule Active: Turning ON instantly to %d\n", schedule.brightness);
+        } else {
+            // Turning OFF: Start the soft 30-second fade out sequence instead of shutting off instantly
+            isFadingOut = true;
+            fadeStartTime = millis();
+            Serial.printf("Schedule Ended: Starting 30s soft fade out from %d...\n", schedule.brightness);
+        }
+    }
+}
+
+void handleSetBrightness() {
+    if (server.hasArg("brightness")) {
+        int b = server.arg("brightness").toInt();
+        if (b >= 0 && b <= 1023) {
+            schedule.brightness = b;
+            saveSchedule();
+
+            // If the schedule is actively ON and not fading out, update the live brightness instantly
+            if (ledState && !isFadingOut) {
+                writeInvertedPWM(schedule.brightness);
+            }
+            server.send(200, "application/json", "{}");
+        } else {
+            server.send(400, "application/json", "{\"error\":\"Range 0-1023\"}");
+        }
+    }
+}
+
+void handleClearSchedule() {
+    schedule.isValid = false;
+    saveSchedule();
+    isFadingOut = false;
+    ledState = false;
+    writeInvertedPWM(0); // Snaps off immediately if the schedule is wiped
+    server.send(200, "application/json", "{}");
 }
 
 void updateCurrentTime() {
@@ -115,6 +216,10 @@ void handleSyncTime() {
         currentSecond = server.hasArg("second") ? server.arg("second").toInt() : 0;
         lastMillis = millis();
         timeInitialized = true;
+
+        // Force evaluation right away after time syncing
+        checkSchedule();
+
         server.send(200, "application/json", "{}");
     } else {
         server.send(400, "application/json", "{\"error\":\"Missing params\"}");
@@ -134,41 +239,6 @@ void saveSchedule() {
     EEPROM.commit();
 }
 
-void checkSchedule() {
-    if (!schedule.isValid || !timeInitialized) return;
-
-    int curMin = currentHour * 60 + currentMinute;
-    int startMin = schedule.startHour * 60 + schedule.startMinute;
-    int endMin = schedule.endHour * 60 + schedule.endMinute;
-
-    bool shouldBeOn = false;
-    if (startMin > endMin) { // Midnight crossing
-        shouldBeOn = (curMin >= startMin || curMin < endMin);
-    } else {
-        shouldBeOn = (curMin >= startMin && curMin < endMin);
-    }
-
-    if (shouldBeOn != ledState) {
-        ledState = shouldBeOn;
-        analogWrite(LED_PIN, ledState ? schedule.brightness : 0);
-        Serial.printf("Output: %s (PWM: %d)\n", ledState ? "ON" : "OFF", schedule.brightness);
-    }
-}
-
-void handleSetBrightness() {
-    if (server.hasArg("brightness")) {
-        int b = server.arg("brightness").toInt();
-        if (b >= 0 && b <= 1023) {
-            schedule.brightness = b;
-            saveSchedule();
-            if (ledState) analogWrite(LED_PIN, schedule.brightness);
-            server.send(200, "application/json", "{}");
-        } else {
-            server.send(400, "application/json", "{\"error\":\"Range 0-1023\"}");
-        }
-    }
-}
-
 void handleSetSchedule() {
     if (server.hasArg("startHour") && server.hasArg("startMin") && server.hasArg("startPeriod") &&
         server.hasArg("endHour") && server.hasArg("endMin") && server.hasArg("endPeriod")) {
@@ -185,8 +255,10 @@ void handleSetSchedule() {
 
         schedule.isValid = true;
         saveSchedule();
+        checkSchedule();
+
         server.send(200, "application/json", "{}");
-        Serial.println("Schedule Set");
+        Serial.println("Schedule Set Successfully");
     } else {
         server.send(400, "application/json", "{\"error\":\"Missing params\"}");
     }
@@ -210,6 +282,8 @@ void handleGetScheduleJson() {
 void handleStatus() {
     String json = "{";
     json += "\"ledState\":" + String(ledState ? "true" : "false") + ",";
+    json += "\"isFadingOut\":" + String(isFadingOut ? "true" : "false") + ",";
+    json += "\"currentOutputBrightness\":" + String(currentOutputBrightness) + ",";
     json += "\"scheduleValid\":" + String(schedule.isValid ? "true" : "false") + ",";
     json += "\"timeInitialized\":" + String(timeInitialized ? "true" : "false") + ",";
     json += "\"brightness\":" + String(schedule.brightness) + ",";
@@ -217,14 +291,6 @@ void handleStatus() {
     json += "\"currentMinute\":" + String(currentMinute);
     json += "}";
     server.send(200, "application/json", json);
-}
-
-void handleClearSchedule() {
-    schedule.isValid = false;
-    saveSchedule();
-    analogWrite(LED_PIN, 0);
-    ledState = false;
-    server.send(200, "application/json", "{}");
 }
 
 int convertTo24Hour(int hour, String period) {
@@ -235,7 +301,7 @@ int convertTo24Hour(int hour, String period) {
 }
 
 void handleRoot() {
-    String html = "<html><body><h2>ESP Scheduler</h2>";
+    String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'></head><body><h2>ESP Scheduler</h2>";
     html += "Brightness: <input type='range' min='0' max='1023' value='" + String(schedule.brightness) + "' onchange=\"fetch('/setBrightness?brightness='+this.value,{method:'POST'})\">";
     html += "</body></html>";
     server.send(200, "text/html", html);
