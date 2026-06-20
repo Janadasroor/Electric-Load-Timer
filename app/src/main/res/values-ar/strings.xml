@@ -42,6 +42,8 @@
     <string name="end_time">وقت النهاية</string>
     <string name="set">تعيين</string>
     <string name="cancel">إلغاء</string>
+    <string name="hour">الساعة</string>
+    <string name="minute">الدقيقة</string>
     
     <!-- Sync Time Dialog -->
     <string name="current_device_time">وقت الجهاز الحالي: %1$02d:%2$02d:%3$02d</string>

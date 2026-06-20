@@ -42,6 +42,8 @@
     <string name="end_time">End Time</string>
     <string name="set">Set</string>
     <string name="cancel">Cancel</string>
+    <string name="hour">Hour</string>
+    <string name="minute">Minute</string>
     
     <!-- Sync Time Dialog -->
     <string name="current_device_time">Current device time: %1$02d:%2$02d:%3$02d</string>

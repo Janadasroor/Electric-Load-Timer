@@ -46,6 +46,7 @@ fun ESP8266ControlScreen(
 ) {
     val status by viewModel.status.collectAsState()
     val schedule by viewModel.schedule.collectAsState()
+    val isConnected by viewModel.isConnected.collectAsState()
 
     var showScheduleDialog by remember { mutableStateOf(false) }
     var showSyncDialog by remember { mutableStateOf(false) }
@@ -70,19 +71,50 @@ fun ESP8266ControlScreen(
         // Top App Bar
         TopAppBar(
             title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Power,
-                        contentDescription = null,
-                        tint = OrangeAccent,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = stringResource(R.string.esp_controller),
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Power,
+                            contentDescription = null,
+                            tint = OrangeAccent,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.esp_controller),
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+                    
+                    Surface(
+                        color = if (isConnected) Color(0xFF2E7D32) else Color(0xFFC62828),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(Color.White)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (isConnected) "Online" else "Offline",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -470,7 +502,6 @@ fun ControlButtons(onSyncTime: () -> Unit, onRefresh: () -> Unit) {
 fun ImprovedLogWindow(viewModel: MainViewModel) {
     val logs by viewModel.logList.collectAsState()
     val listState = rememberLazyListState()
-    val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
 
     LaunchedEffect(logs.size) {
         if (logs.isNotEmpty()) {
@@ -547,19 +578,29 @@ fun ImprovedLogWindow(viewModel: MainViewModel) {
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(logs) { line ->
+                            val parts = remember(line) {
+                                if (line.startsWith("[") && line.indexOf("] ") > 0) {
+                                    val index = line.indexOf("] ")
+                                    Pair(line.substring(0, index + 1), line.substring(index + 2))
+                                } else {
+                                    Pair("", line)
+                                }
+                            }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.Top
                             ) {
+                                if (parts.first.isNotEmpty()) {
+                                    Text(
+                                        text = parts.first,
+                                        color = OrangeLight,
+                                        fontSize = 11.sp,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
                                 Text(
-                                    text = "[${timeFormat.format(Date())}]",
-                                    color = OrangeLight,
-                                    fontSize = 11.sp,
-                                    fontFamily = FontFamily.Monospace
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = line,
+                                    text = parts.second,
                                     color = TextPrimary,
                                     fontSize = 12.sp,
                                     fontFamily = FontFamily.Monospace,
@@ -708,7 +749,7 @@ fun TimePickerRow(
         // Hour Slider
         Column {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "Hour", color = TextSecondary, fontSize = 12.sp)
+                Text(text = stringResource(R.string.hour), color = TextSecondary, fontSize = 12.sp)
                 Text(text = "$hour", color = OrangeAccent, fontWeight = FontWeight.Bold)
             }
             Slider(
@@ -727,7 +768,7 @@ fun TimePickerRow(
         // Minute Slider
         Column {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "Minute", color = TextSecondary, fontSize = 12.sp)
+                Text(text = stringResource(R.string.minute), color = TextSecondary, fontSize = 12.sp)
                 Text(text = "%02d".format(min), color = OrangeAccent, fontWeight = FontWeight.Bold)
             }
             Slider(
@@ -750,7 +791,7 @@ fun TimePickerRow(
             FilterChip(
                 selected = period == "AM",
                 onClick = { onPeriodChange("AM") },
-                label = { Text("AM") },
+                label = { Text(stringResource(R.string.am)) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = OrangeAccent.copy(alpha = 0.1f),
                     selectedLabelColor = OrangeAccent,
@@ -768,7 +809,7 @@ fun TimePickerRow(
             FilterChip(
                 selected = period == "PM",
                 onClick = { onPeriodChange("PM") },
-                label = { Text("PM") },
+                label = { Text(stringResource(R.string.pm)) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = OrangeAccent.copy(alpha = 0.1f),
                     selectedLabelColor = OrangeAccent,
